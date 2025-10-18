@@ -1,0 +1,153 @@
+Educational Malware Simulator
+Demonstrates virus, worm, and trojan behavior in a safe, controlled environment
+WARNING: For educational purposes only. Does not create actual malware.
+"""
+
+import random
+import time
+from datetime import datetime
+from collections import deque
+
+class SimulatedFile:
+    """Represents a simulated file in the virtual environment"""
+    def _init_(self, name, file_type="normal", size=100):
+        self.name = name
+        self.file_type = file_type  # normal, infected, trojan
+        self.size = size
+        self.infected = False
+        self.hidden_payload = None
+        self.creation_time = datetime.now()
+    
+    def _repr_(self):
+        status = "🦠" if self.infected else "📄"
+        trojan = "🎭" if self.file_type == "trojan" else ""
+        return f"{status}{trojan} {self.name} ({self.size}KB)"
+
+class SimulatedSystem:
+    """Represents a simulated computer system"""
+    def _init_(self, name, num_files=10):
+        self.name = name
+        self.files = [SimulatedFile(f"file_{i}.txt", size=random.randint(50, 500)) 
+                      for i in range(num_files)]
+        self.infected = False
+        self.connected_systems = []
+    
+    def add_file(self, file):
+        self.files.append(file)
+    
+    def get_clean_files(self):
+        return [f for f in self.files if not f.infected]
+    
+    def get_infected_files(self):
+        return [f for f in self.files if f.infected]
+    
+    def _repr_(self):
+        status = "⚠️ INFECTED" if self.infected else "✅ CLEAN"
+        return f"{self.name} - {status} ({len(self.files)} files)"
+
+class VirusSimulator:
+    """Simulates virus behavior - infects files when executed"""
+    def _init_(self):
+        self.name = "SimVirus"
+        self.signature = "VIRUS_SIG_" + str(random.randint(1000, 9999))
+        self.infections = 0
+    
+    def infect_file(self, file):
+        """Infects a single file by attaching virus code"""
+        if not file.infected:
+            file.infected = True
+            file.size += random.randint(10, 50)  # Virus code adds size
+            self.infections += 1
+            return True
+        return False
+    
+    def spread_in_system(self, system):
+        """Virus spreads to other files in the same system"""
+        print(f"\n[VIRUS] {self.name} activated on {system.name}")
+        clean_files = system.get_clean_files()
+        
+        if not clean_files:
+            print("[VIRUS] No clean files to infect")
+            return
+        
+        # Infect 1-3 random files
+        num_to_infect = min(random.randint(1, 3), len(clean_files))
+        targets = random.sample(clean_files, num_to_infect)
+        
+        for file in targets:
+            if self.infect_file(file):
+                print(f"  → Infected: {file.name} (+{file.size - 100}KB virus code)")
+                time.sleep(0.3)
+        
+        system.infected = True
+        print(f"[VIRUS] Infected {num_to_infect} files. Total infections: {self.infections}")
+
+class WormSimulator:
+    """Simulates worm behavior - self-replicates across network"""
+    def _init_(self):
+        self.name = "SimWorm"
+        self.signature = "WORM_SIG_" + str(random.randint(1000, 9999))
+        self.systems_compromised = []
+    
+    def scan_network(self, systems):
+        """Scans for vulnerable systems"""
+        print(f"\n[WORM] {self.name} scanning network...")
+        vulnerable = [s for s in systems if not s.infected]
+        print(f"[WORM] Found {len(vulnerable)} vulnerable systems")
+        return vulnerable
+    
+    def exploit_and_spread(self, source_system, target_systems):
+        """Exploits vulnerability and spreads to other systems"""
+        print(f"\n[WORM] {self.name} initiating self-replication from {source_system.name}")
+        
+        for target in target_systems:
+            # Simulate network propagation delay
+            time.sleep(0.5)
+            
+            # Simulate exploit attempt
+            if random.random() > 0.3:  # 70% success rate
+                print(f"  → Exploiting {target.name}...")
+                
+                # Create worm copy on target system
+                worm_copy = SimulatedFile(
+                    f"worm_copy_{len(self.systems_compromised)}.exe",
+                    file_type="infected",
+                    size=random.randint(200, 400)
+                )
+                worm_copy.infected = True
+                target.add_file(worm_copy)
+                target.infected = True
+                self.systems_compromised.append(target.name)
+                
+                print(f"  ✓ {target.name} compromised! Worm installed.")
+            else:
+                print(f"  ✗ Failed to compromise {target.name}")
+        
+        print(f"\n[WORM] Total systems compromised: {len(self.systems_compromised)}")
+
+class TrojanSimulator:
+    """Simulates trojan behavior - disguises as legitimate software"""
+    def _init_(self):
+        self.name = "SimTrojan"
+        self.disguise_names = [
+            "system_update.exe",
+            "video_player.exe",
+            "document.pdf.exe",
+            "game_installer.exe",
+            "antivirus_scan.exe"
+        ]
+        self.payload_executed = False
+    
+    def create_trojan_file(self):
+        """Creates a trojan disguised as legitimate software"""
+        disguise = random.choice(self.disguise_names)
+        trojan = SimulatedFile(disguise, file_type="trojan", size=random.randint(1000, 3000))
+        trojan.hidden_payload = "backdoor_access"
+        return trojan
+    
+    def execute_on_system(self, system):
+        """Simulates user executing the trojan"""
+        print(f"\n[TROJAN] User executes seemingly legitimate program...")
+        
+        trojan = self.create_trojan_file()
+        system.add_
